@@ -56,8 +56,10 @@ class MainApp < Sinatra::Base
     register Sinatra::Reloader
   end
 
+
   enable :sessions
   set :session_secret, "f5Nb/emouGPVtSjfkdly3piqxWkX6iTC"
+  set :websockets, []
 
   get '/' do
     "hello world!"
@@ -138,7 +140,6 @@ class MainApp < Sinatra::Base
   end
 
   # アプリとの通信用websocket
-  set :websockets, []
   get '/websocket' do
     unless session[:user_id]
       halt 403, TEXT_PLAIN, "Not logged in."
@@ -165,20 +166,22 @@ class MainApp < Sinatra::Base
   end
 
   post '/api/:type', :provides => [:text] do
-    posted_json = request.body.read
+    if !request.content_type.match(/^multipart\/form-data/)
+      posted_json = request.body.read
 
-    if posted_json.length == 0
-      halt 400, TEXT_PLAIN, "No data is posted."
-    end
+      if posted_json.length == 0
+        halt 400, TEXT_PLAIN, "No data is posted."
+      end
 
-    posted_hash = JSONex::parse_ex(posted_json)
+      posted_hash = JSONex::parse_ex(posted_json)
 
-    unless posted_hash
-      halt 400, TEXT_PLAIN, "Posted JSON is invalid."
+      unless posted_hash
+        halt 400, TEXT_PLAIN, "Posted JSON is invalid."
+      end
     end
 
     mob_api = [ "user", "gateway_add", "gateway_del",
-      "sensor", "controller", "operation" ]
+      "sensor", "controller", "operation"]
 
     if mob_api.include?(params[:type])
       unless session[:user_id]
@@ -1051,9 +1054,10 @@ class MainApp < Sinatra::Base
     res = JSON.parse(res_json, {:symbolize_names => true})
     res.sort_by! { |o| o[:score].to_f * -1 }
 
-    if res.first[:score] >= 0.9
+    if res.first[:score].to_f >= 0.9
       case res.first[:label]
       when "person"
+        return "N/A" if settings.websockets.empty?
         settings.websockets.each do |s|
           s.send({
             classify: res,
@@ -1061,7 +1065,7 @@ class MainApp < Sinatra::Base
           }.to_json)
         end
       when "dog", "cat"
-       # pet用のドアのIDは暫定で1
+        # pet用のドアのIDは暫定で1
         door_open(1)
       end
     end
