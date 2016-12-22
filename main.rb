@@ -166,7 +166,11 @@ class MainApp < Sinatra::Base
   end
 
   post '/api/:type', :provides => [:text] do
+<<<<<<< HEAD
     if !request.content_type.match(/^multipart\/form-data/)
+=======
+    if request.content_type != "multipart/form-data"
+>>>>>>> 9811c21b4bf27992b55335747611b0d19959f7e1
       posted_json = request.body.read
 
       if posted_json.length == 0
