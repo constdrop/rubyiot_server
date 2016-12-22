@@ -165,20 +165,22 @@ class MainApp < Sinatra::Base
   end
 
   post '/api/:type', :provides => [:text] do
-    posted_json = request.body.read
+    if request.content_type != "multipart/form-data"
+      posted_json = request.body.read
 
-    if posted_json.length == 0
-      halt 400, TEXT_PLAIN, "No data is posted."
-    end
+      if posted_json.length == 0
+        halt 400, TEXT_PLAIN, "No data is posted."
+      end
 
-    posted_hash = JSONex::parse_ex(posted_json)
+      posted_hash = JSONex::parse_ex(posted_json)
 
-    unless posted_hash
-      halt 400, TEXT_PLAIN, "Posted JSON is invalid."
+      unless posted_hash
+        halt 400, TEXT_PLAIN, "Posted JSON is invalid."
+      end
     end
 
     mob_api = [ "user", "gateway_add", "gateway_del",
-      "sensor", "controller", "operation" ]
+      "sensor", "controller", "operation"]
 
     if mob_api.include?(params[:type])
       unless session[:user_id]
