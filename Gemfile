@@ -8,8 +8,10 @@ gem "sqlite3"
 gem "mysql2"
 gem "sinatra"
 gem "sinatra-contrib"
+gem 'sinatra-websocket'
 gem "sinatra-activerecord", :require => 'sinatra/activerecord'
 gem "unicorn"
+gem "rest-client"
 
 group :test do
   gem "rspec"

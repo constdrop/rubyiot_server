@@ -214,3 +214,30 @@ class Operation < ActiveRecord::Base
     end
   end
 end
+
+class Door
+  @@data = [
+    {status: false, pet: false, updated_at: Time.now},
+    {status: false, pet: true, updated_at: Time.now},
+  ]
+  attr_accessor :id, :status, :updated_at
+
+  def self.find(door_id)
+    return nil if door_id.to_i < 0
+
+    door = Door.new
+    door.id = door_id.to_i
+    door.status = @@data[door_id.to_i]
+    return door
+  end
+
+  def self.where(door_id: -1)
+    return find(door_id)
+  end
+
+  def save
+    return nil if !@id || @id.to_i < 0
+    @@data[@id.to_i] = @status
+    return self
+  end
+end

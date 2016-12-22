@@ -1,5 +1,6 @@
 require 'sinatra/base'
 require 'sinatra/contrib'
+require 'sinatra-websocket'
 require 'active_record'
 require 'sqlite3'
 require 'mysql2'
@@ -8,6 +9,7 @@ require 'sinatra/json'
 require 'haml'
 require 'digest'
 require 'bigdecimal'
+require 'rest-client'
 
 require 'sinatra/reloader'
 
@@ -135,6 +137,33 @@ class MainApp < Sinatra::Base
     redirect '/login'
   end
 
+  # アプリとの通信用websocket
+  set :websockets, []
+  get '/websocket' do
+    unless session[:user_id]
+      halt 403, TEXT_PLAIN, "Not logged in."
+    end
+
+    @user = User.find(session[:user_id])
+
+    if request.websocket? then
+      request.websocket do |ws|
+        ws.onopen do
+          settings.websockets << ws
+        end
+        ws.onmessage do |msg|
+          if msg["door_open"]
+            # "{ "door_open": { "door_id": } }
+            door_open(msg["door_open"].to_i)
+          end
+        end
+        ws.onclose do
+          settings.websockets.delete(ws)
+        end
+      end
+    end
+  end
+
   post '/api/:type', :provides => [:text] do
     posted_json = request.body.read
 
@@ -182,6 +211,8 @@ class MainApp < Sinatra::Base
       device_property(posted_hash)
     when "monitor"
       monitor(posted_hash)
+    when "door_image"
+      door_image(params)
     else
       halt 404, TEXT_PLAIN, "Not Found"
     end
@@ -200,21 +231,7 @@ class MainApp < Sinatra::Base
       halt 403, TEXT_PLAIN, "Not logged in."
     end
 
-    objs = user_gateway(session[:user_id])
-    return_hash = {}
-
-    objs.each do |obj|
-      h = {
-        obj.id.to_s => {
-          "hardware_uid" => obj.hardware_uid,
-          "name" => obj.name
-        }
-      }
-
-      return_hash = return_hash.merge(h)
-    end
-
-    JSON::generate(return_hash)
+    JSON::generate(get_gateway)
   end
 
   get '/api/sensor', :provides => [:json] do
@@ -695,6 +712,27 @@ class MainApp < Sinatra::Base
     end
   end
 
+  get '/api/door_status', :provides => [:json] do
+    unless session[:user_id]
+      halt 403, TEXT_PLAIN, "Not logged in."
+    end
+
+    @user = User.find(session[:user_id])
+
+    # 本来は、Userごとのdoor_idを取得
+    door_id_ary = [0, 1]
+
+    h = door_id_ary.each_with_object({}) do |id, door|
+      if id >= 0
+        door[id.to_s] = Door.find(door_id).status ? true : false
+      else
+        door[id.to_s] = false
+      end
+    end
+
+    JSON::generate(h)
+  end
+
   private
   def login(posted_hash)
     if user = User.where(:login_name => posted_hash["username"]).first
@@ -729,6 +767,15 @@ class MainApp < Sinatra::Base
     user.password = posted_hash["password"]
     unless user.save
       halt 500, TEXT_PLAIN, "Failed to change your password."
+    end
+  end
+
+  def get_gateway
+    user_gateway(session[:user_id]).each_with_object({}) do |obj, h|
+      h[obj.id.to_s] = {
+        "hardware_uid" => obj.hardware_uid,
+        "name" => obj.name
+      }
     end
   end
 
@@ -768,6 +815,12 @@ class MainApp < Sinatra::Base
       gateway_id: posted_hash["gateway_id"])
 
     "OK"
+  end
+
+  def get_sensor_data(params)
+
+    # 未実装
+
   end
 
   def sensor_data(posted_hash)
@@ -981,6 +1034,45 @@ class MainApp < Sinatra::Base
     end
 
     "OK"
+  end
+
+  def door_image(params)
+    # 認識APIへの問い合わせ
+    res_json = RestClient::Request.execute(
+      :url => 'https://www7139ug.sakura.ne.jp/api/v1/classify/',
+      :method => :post,
+      :verify_ssl => false,
+      :payload => {
+        :multipart => true,
+        :img => File.open(params[:file][:tempfile], 'rb')
+        }
+      )
+
+    res = JSON.parse(res_json, {:symbolize_names => true})
+    res.sort_by! { |o| o[:score].to_f * -1 }
+
+    if res.first[:score] >= 0.9
+      case res.first[:label]
+      when "person"
+        settings.websockets.each do |s|
+          s.send({
+            classify: res,
+            img: Base64.encode64(File.open(params[:file][:tempfile], 'rb').read)
+          }.to_json)
+        end
+      when "dog", "cat"
+       # pet用のドアのIDは暫定で1
+        door_open(1)
+      end
+    end
+
+    "OK"
+  end
+
+  def door_open(door_id)
+    door = Door.find(door_id)
+    door.status = true
+    door.save
   end
 
   def minify(device_property_id, value)
