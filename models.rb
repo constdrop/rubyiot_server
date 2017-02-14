@@ -227,7 +227,7 @@ class Door
 
     door = Door.new
     door.id = door_id.to_i
-    door.status = @@data[door_id.to_i]
+    door.status = @@data[door_id.to_i][:status]
     return door
   end
 

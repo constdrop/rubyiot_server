@@ -166,11 +166,7 @@ class MainApp < Sinatra::Base
   end
 
   post '/api/:type', :provides => [:text] do
-<<<<<<< HEAD
     if !request.content_type.match(/^multipart\/form-data/)
-=======
-    if request.content_type != "multipart/form-data"
->>>>>>> 9811c21b4bf27992b55335747611b0d19959f7e1
       posted_json = request.body.read
 
       if posted_json.length == 0
@@ -220,6 +216,8 @@ class MainApp < Sinatra::Base
       monitor(posted_hash)
     when "door_image"
       door_image(params)
+    when "door_close"
+      door_close(posted_hash)
     else
       halt 404, TEXT_PLAIN, "Not Found"
     end
@@ -731,7 +729,7 @@ class MainApp < Sinatra::Base
 
     h = door_id_ary.each_with_object({}) do |id, door|
       if id >= 0
-        door[id.to_s] = Door.find(door_id).status ? true : false
+        door[id.to_s] = Door.find(id).status ? true : false
       else
         door[id.to_s] = false
       end
@@ -1081,6 +1079,14 @@ class MainApp < Sinatra::Base
     door = Door.find(door_id)
     door.status = true
     door.save
+    system 'sh door_close.sh 0 &'
+  end
+
+  def door_close(posted_hash)
+    door = Door.find(posted_hash["id"].to_i)
+    door.status = false
+    door.save
+    "OK"
   end
 
   def minify(device_property_id, value)
