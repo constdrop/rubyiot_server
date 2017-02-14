@@ -1,0 +1,10 @@
+!!!
+%haml{:lang => "ja"}
+  %head
+    %meta{:content => "width=device-width, initial-scale=1.0", :name => "viewport"}
+%link{:rel=> :stylesheet, :type => "text/css", :href => "/stylesheets/mobile_view.css"}
+  %body
+    %h1{:class=> "interphone_title"} interPhone
+%div{} #{@current_time}
+%img{:src => @img_src, :class => "camera_picture"}
+%a{:href => "/open_sesame", :class => "open_button" }Open

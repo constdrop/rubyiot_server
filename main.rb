@@ -738,6 +738,42 @@ class MainApp < Sinatra::Base
     JSON::generate(h)
   end
 
+
+  # /interphone_top
+  # standbyするメイン画面となります。
+  # jsで3秒ごとに/interphone_topにredirectします。
+  # ごの中で画像認識処理されてない写真があるかどうかをキャッチします。
+  # 未処理画像があったら(誰かピンポン押してアップされたら)
+  # /interphone_camera_viewへredirectします。
+  # 画面の変化がわかりづらいためtimestamp入れました。
+  # openボタンはデザインの一貫性のためで機能はしません。
+  get '/interphone_top' do
+    # checking the picture that not be processed
+
+    @current_time = Time.now.strftime("%Y/%m/%d %T")
+    haml :interphone_top
+  end
+
+  # /interphone_camera_view
+  # 未処理画像を表示し、開けるか開けないかを判断するところです。
+  # 曖昧な場合はopenボタンの入力を待ちます。
+  # openが押させたら/open_sesameにgetでrequestしてドアーを開けます。
+  get '/interphone_camera_view' do
+    # required auto opening logic when human coming
+    @current_time = Time.now.strftime("%Y/%m/%d %T")
+    @img_src = "/images/bear.png" # should be changed to real picture's path
+    haml :interphone_camera_view
+  end
+
+  # /open_sesame
+  　# ドアーを開けます。
+  # 開け終わったらinterphone_topにredirectして待機モードに移動します。
+  get '/open_sesame' do
+    # door open function
+    redirect '/interphone_top' # return to standby status after open the door
+  end
+
+
   private
   def login(posted_hash)
     if user = User.where(:login_name => posted_hash["username"]).first

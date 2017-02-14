@@ -1,0 +1,14 @@
+!!!
+%haml{:lang => "ja"}
+  %head
+    %meta{:content => "width=device-width, initial-scale=1.0", :name => "viewport"}
+    :javascript
+      setInterval(function() {
+            window.location.replace("/interphone_top");
+      }, 3000);
+%link{:rel=> :stylesheet, :type => "text/css", :href => "/stylesheets/mobile_view.css"}
+  %body
+    %h1{:class=> "interphone_title"} interPhone
+%div{} #{@current_time}
+%img{:src => "/images/top.png", :class => "camera_picture"}
+%a{:href => "#", :class => "open_button" } Open

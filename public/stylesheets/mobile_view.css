@@ -1,0 +1,22 @@
+h1.interphone_title{
+	text-align: center;
+}
+
+.camera_picture{
+	width: 100%;
+	margin-bottom:10px;
+	display: inline-block;
+}
+
+.open_button{
+	padding: 30px 70px 30px 70px;
+	line-height: 100px;
+	background-color: #EEEEEE;
+	border-top: 1px solid #CCCCCC;
+	border-right: 1px solid #333333;
+	border-bottom: 1px solid #333333;
+	border-left: 1px solid #CCCCCC;
+	font-size: 15px;
+	color: #333333;
+	text-decoration: none;
+}
