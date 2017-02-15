@@ -766,7 +766,7 @@ class MainApp < Sinatra::Base
   end
 
   # /open_sesame
-  　# ドアーを開けます。
+  # ドアーを開けます。
   # 開け終わったらinterphone_topにredirectして待機モードに移動します。
   get '/open_sesame' do
     # door open function
@@ -1115,7 +1115,7 @@ class MainApp < Sinatra::Base
     door = Door.find(door_id)
     door.status = true
     door.save
-    system 'sh door_close.sh 0 &'
+    system "sh door_close.sh #{door_id} &"
   end
 
   def door_close(posted_hash)

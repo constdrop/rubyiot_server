@@ -237,7 +237,7 @@ class Door
 
   def save
     return nil if !@id || @id.to_i < 0
-    @@data[@id.to_i] = @status
+    @@data[@id.to_i][:status] = @status
     return self
   end
 end
