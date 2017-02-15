@@ -10,6 +10,7 @@ require 'haml'
 require 'digest'
 require 'bigdecimal'
 require 'rest-client'
+require 'fileutils'
 
 require 'sinatra/reloader'
 
@@ -1096,10 +1097,12 @@ class MainApp < Sinatra::Base
       case res.first[:label]
       when "person"
         return "N/A" if settings.websockets.empty?
+        img_file_name = File.basename(params[:file][:tempfile])
+        FileUtils.cp(params[:file][:tempfile], "public/images/")
         settings.websockets.each do |s|
           s.send({
             classify: res,
-            img: Base64.encode64(File.open(params[:file][:tempfile], 'rb').read)
+            imgPath: "/images/#{img_file_name}"
           }.to_json)
         end
       when "dog", "cat"

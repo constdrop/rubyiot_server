@@ -3,12 +3,58 @@
   %head
     %meta{:content => "width=device-width, initial-scale=1.0", :name => "viewport"}
     :javascript
-      setInterval(function() {
-            window.location.replace("/interphone_top");
-      }, 3000);
+      //setInterval(function() {
+      //      window.location.replace("/interphone_top");
+      //}, 3000);
+      var uri = "ws://rubyiot.rcloud.jp/websocket";
+      var webSocket = null;
+
+      function open() {
+        if (webSocket == null) {
+          // WebSocket の初期化
+          webSocket = new WebSocket(uri);
+          // イベントハンドラの設定
+          webSocket.onopen = onOpen;
+          webSocket.onmessage = onMessage;
+          webSocket.onclose = onClose;
+          webSocket.onerror = onError;
+        }
+      };
+
+      function onOpen(event) {
+
+      };
+
+      function onMessage(event) {
+        if (event && event.data) {
+          var doorImage = JSON.parse(event.data);
+          $("#camera_picture").attr("src", doorImage.imgPath);
+          alert("誰かがインターホンを鳴らしました。");
+        }
+      };
+
+      function onError(event) {
+
+      };
+
+      function onClose(event) {
+        alert("切断しました。3秒後に再接続します。(" + event.code + ")");
+        webSocket = null;
+        setTimeout("open()", 3000);
+      };
+
+      $(document).ready(function() {
+        $("#open-button").on("click", function() {
+          webSocket.send('{ "door_open": { "door_id": 0} }';
+          $("#camera_picture").attr("src", "/images/top.png");
+          alert("ドアを開けました。");
+        })
+      });
+
 %link{:rel=> :stylesheet, :type => "text/css", :href => "/stylesheets/mobile_view.css"}
   %body
     %h1{:class=> "interphone_title"} interPhone
 %div{} #{@current_time}
-%img{:src => "/images/top.png", :class => "camera_picture"}
-%a{:href => "#", :class => "open_button" } Open
+%img{:src => "/images/top.png", :id => "camera_picture" , :class => "camera_picture"}
+%button{id: "open-button"} Open
+-# %a{:href => "#", :class => "open_button" } Open
