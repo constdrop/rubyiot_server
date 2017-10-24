@@ -1,0 +1,39 @@
+!!!
+%haml{:lang => "ja"}
+  %head
+    %meta{:content => "width=device-width, initial-scale=1.0", :name => "viewport"}
+    %script{:type => "text/javascript", :src => "/js/jquery-1.11.1.min.js"}
+    :javascript
+      $(document).ready(function() {
+        var timestamp = 0;
+        var imageUpdate = function() {
+          $.ajax({
+            type: 'GET',
+            url : '/api/classify_image',
+            success: function(res) {
+              // 成功の場合の処理
+              var json = JSON.parse(res);
+              if (json.timestamp > timestamp) {
+                $("#panel-body img").attr("src", "/images/classify_image.jpg?t=" + Date.now());
+                $("#image_label").text(json.label);
+                $("#image_score").text(json.score);
+                timestamp = json.timestamp;
+              }
+            },
+            error: function (xhr, status, err) {
+              // 失敗の場合の処理
+              alert(xhr.responseJSON.error.message);
+            }
+          });
+          setTimeout(imageUpdate, 1000);
+        };
+        imageUpdate();
+      });
+  %body
+    %h1 画像認識
+    %div{:id => "image-panel"}
+      %div{:class => "panel-title"}
+      %div{:class => "panel-body"}
+        %img{:src => "/images/classify_image.jpg"}
+        %div{:id => "image_label"}
+        %div{:id => "image_score"}
