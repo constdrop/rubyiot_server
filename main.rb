@@ -51,6 +51,7 @@ class Hash
   end
 end
 
+$classify_result = {}
 
 class MainApp < Sinatra::Base
   configure :development do
@@ -60,6 +61,7 @@ class MainApp < Sinatra::Base
 
   enable :sessions
   set :session_secret, "f5Nb/emouGPVtSjfkdly3piqxWkX6iTC"
+  set :server, "thin"
   set :websockets, []
 
   get '/' do
@@ -140,6 +142,14 @@ class MainApp < Sinatra::Base
     redirect '/login'
   end
 
+  get '/classify_image' do
+    haml :classify_image
+  end
+
+  get '/api/classify_image' do
+    $classify_result.to_json
+  end
+
   # アプリとの通信用websocket
   get '/websocket' do
     unless session[:user_id]
@@ -216,9 +226,12 @@ class MainApp < Sinatra::Base
     when "monitor"
       monitor(posted_hash)
     when "door_image"
-      door_image(params)
+      #door_image(params)
+      classify_image(params)
     when "door_close"
       door_close(posted_hash)
+    when "classify_image"
+      classify_image(params)
     else
       halt 404, TEXT_PLAIN, "Not Found"
     end
@@ -1125,6 +1138,29 @@ class MainApp < Sinatra::Base
     door = Door.find(posted_hash["id"].to_i)
     door.status = false
     door.save
+    "OK"
+  end
+
+  def classify_image(params)
+    FileUtils.cp params[:file][:tempfile], "public/images/classify_image.jpg"
+    # 認識APIへの問い合わせ
+    begin
+      res_json = RestClient::Request.execute(
+        :url => 'https://www7139ug.sakura.ne.jp/classify',
+        :method => :post,
+        :verify_ssl => false,
+        :payload => {
+          :multipart => true,
+          :imgs => File.open("public/images/classify_image.jpg", 'rb')
+          }
+        )
+    rescue RestClient::NotFound => e
+      halt 500, TEXT_PLAIN, "classify server not found."
+    end
+
+    res = JSON.parse(res_json, {:symbolize_names => true})
+    $classify_result = res[:images][0][:result][0]
+    $classify_result[:timestamp] = Time.now.to_i
     "OK"
   end
 
