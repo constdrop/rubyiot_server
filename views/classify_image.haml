@@ -15,8 +15,6 @@
               var json = JSON.parse(res);
               if (json.timestamp > timestamp) {
                 $("#image-panel img").attr("src", "/images/classify_image.jpg?t=" + Date.now())
-                //$("#image-panel img").remove();
-                //$("#image-panel").prependTo('<img src="/images/classify_image.jpg?t=' + Date.now() + '" />');
                 $("#image_label").text(json.label);
                 $("#image_score").text(json.score);
                 timestamp = json.timestamp;
@@ -24,7 +22,7 @@
             },
             error: function (xhr, status, err) {
               // 失敗の場合の処理
-              alert(xhr.responseJSON.error.message);
+              //alert(status);
             }
           });
           setTimeout(imageUpdate, 1000);
