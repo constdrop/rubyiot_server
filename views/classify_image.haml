@@ -14,7 +14,9 @@
               // 成功の場合の処理
               var json = JSON.parse(res);
               if (json.timestamp > timestamp) {
-                $("#panel-body img").attr("src", "/images/classify_image.jpg?t=" + Date.now());
+                $("#image-panel img").attr("src", "/images/classify_image.jpg?t=" + Date.now())
+                //$("#image-panel img").remove();
+                //$("#image-panel").prependTo('<img src="/images/classify_image.jpg?t=' + Date.now() + '" />');
                 $("#image_label").text(json.label);
                 $("#image_score").text(json.score);
                 timestamp = json.timestamp;
